@@ -1,0 +1,75 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: '5.x'
+
+    - name: Install .NET Framework Developer Pack
+      run: choco install netfx-4.8-devpack
+
+    - name: Restore dependencies
+      run: dotnet restore IFME/IFME.csproj
+
+    - name: Build the application
+      run: dotnet build IFME/IFME.csproj --configuration Release
+
+    - name: Create release directory
+      run: mkdir release
+
+    - name: Copy built files to release directory
+      run: cp -r IFME/bin/Release/net5.0/* release/
+
+    - name: Compress release files
+      run: Compress-Archive -Path release/* -DestinationPath IFME.zip
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: IFME
+        path: IFME.zip
+
+  release:
+    needs: build
+    runs-on: windows-latest
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: IFME
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          Release version ${{ github.ref }} of IFME.
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: IFME.zip
+        asset_name: IFME.zip
+        asset_content_type: application/zip
