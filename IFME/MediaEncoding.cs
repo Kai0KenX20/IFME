@@ -76,7 +76,7 @@ namespace IFME
                 {
                     var embed = new FFmpeg.MediaInfo(file);
 
-                    for (int e = 0; i < embed.Subtitle.Count; i++)
+                    for (int e = 0; e < embed.Subtitle.Count; e++)
                     {
                         var e_id = embed.Subtitle[e].Id;
                         var e_fmt = embed.Subtitle[e].Codec;
@@ -154,7 +154,7 @@ namespace IFME
 
                     var trim = queue.Trim.Enable ? $"-ss {queue.Trim.Start} -t {queue.Trim.Duration}" : string.Empty;
 
-                    var qu = string.IsNullOrEmpty(ac.Mode[md].Args) ? string.Empty : $"{ac.Mode[md].Args} {ac.Mode[md].QualityPrefix}{item.Encoder.Quality}{ac.Mode[md].QualityPostfix}";
+                    var qu = $"{ac.Mode[md].Args} {ac.Mode[md].QualityPrefix}{item.Encoder.Quality}{ac.Mode[md].QualityPostfix}";
                     var hz = item.Encoder.SampleRate == 0 ? string.Empty : $"-ar {item.Encoder.SampleRate}";
                     var ch = item.Encoder.Channel == 0 ? string.Empty : $"-ac {item.Encoder.Channel}";
 
@@ -456,7 +456,7 @@ namespace IFME
                             frmMain.PrintLog($"[INFO] Multi-pass encoding: {p} of {item.Encoder.MultiPass}");
 
                             if (vc.Args.Pipe)
-                                ProcessManager.Start(tempDir, $"\"{FFmpeg}\" -hide_banner -v error {ff_infps} -i \"{item.File}\" {cmd_ff} {ff_rawcodec} {item.Quality.Command} - | \"{en}\" {vc.Args.Y4M} {vc.Args.Input} {en_framecount} {cmd_en} {en_preset} {en_tune} {en_mode} {vc.Args.Command} {item.Encoder.Command} {pass} {vc.Args.Output} {outencfile}");
+                                ProcessManager.Start(tempDir, $"\"{FFmpeg}\" -hide_banner -v error {ff_infps} -i \"{item.File}\" {cmd_ff} {ff_rawcodec} {item.Quality.Command} - | \"{en}\" {vc.Args.Y4M} {vc.Args.Input} {cmd_en} {en_preset} {en_tune} {en_mode} {vc.Args.Command} {item.Encoder.Command} {pass} {vc.Args.Output} {outencfile}");
                             else
                                 ProcessManager.Start(tempDir, $"\"{en}\" {ff_infps} {vc.Args.Input} \"{(string.IsNullOrEmpty(vc.Args.Y4M) ? item.File : vc.Args.Y4M)}\" {cmd_ff_en} {en_mode} {vc.Args.UnPipe} {item.Encoder.Command} {vc.Args.Command} {pass} {vc.Args.Output} {outencfile}");
 
@@ -542,7 +542,7 @@ namespace IFME
                 x++;
             }
 
-            if (queue.OutputFormat == MediaContainer.MKV)
+            if (queue.OutputFormat == MediaContainer.MKV || queue.OutputFormat == MediaContainer.MP4)
             {
                 if (!queue.HardSub)
                 {
@@ -554,6 +554,9 @@ namespace IFME
                         map += $" -map {x}:0";
                         x++;
                         d++;
+
+                        if (queue.OutputFormat == MediaContainer.MP4)
+                                metadata += $" -c:s mov_text ";
                     }
 
                     var tempDirFont = Path.Combine(tempDir, "attachment");
@@ -571,7 +574,7 @@ namespace IFME
             }
 
             var author = $"{Version.Name} {Version.Release} {Version.OSPlatform} {Version.OSArch}";
-            var command = $"\"{FFmpeg}\" -hide_banner -v error -stats {argVideo}{argAudio}{argSubtitle}{metafile}{map} -c copy -metadata:g \"encoding_tool={author}\" {argEmbed}{metadata} -y \"{outFile}\"";
+            var command = $"\"{FFmpeg}\" -strict -2 -hide_banner -v error -stats {argVideo}{argAudio}{argSubtitle}{metafile}{map} -c copy -metadata:g \"encoding_tool={author}\" {argEmbed}{metadata} -y \"{outFile}\"";
             return ProcessManager.Start(tempDir, command);
         }
     }

@@ -114,7 +114,7 @@ namespace IFME
             var w = PbxBanner.Width;
             var h = PbxBanner.Height;
 
-            var b1 = Properties.Resources.Banner_2a;
+            var b1 = Properties.Resources.Banner_4a;
             var b2 = Properties.Resources.Banner_2b;
             var iW = b1.Width;
             var iH = b1.Height;
@@ -331,6 +331,7 @@ namespace IFME
 
                 // Sub Burn
                 chkSubHard.Checked = data.HardSub;
+                chkSubHard.Enabled = data.OutputFormat != MediaContainer.MKV || data.OutputFormat != MediaContainer.MP4;
 
                 // Video
                 ListViewItem_RefreshVideo(data);
@@ -1074,6 +1075,8 @@ namespace IFME
                         }
                     }
                 }
+
+                DisplayProperties_Video();
             }
         }
 
@@ -1100,6 +1103,8 @@ namespace IFME
                         }
                     }
                 }
+
+                DisplayProperties_Video();
             }
         }
 
@@ -1382,10 +1387,23 @@ namespace IFME
                     cboAudioQuality.Items.Add(item);
                 cboAudioQuality.SelectedItem = audio.Mode[0].Default;
 
+                // Sample Rate
+                cboAudioSampleRate.DataSource = null;
                 cboAudioSampleRate.Items.Clear();
+
+                var hz = new Dictionary<int, string>();
                 foreach (var item in audio.SampleRate)
-                    cboAudioSampleRate.Items.Add(item);
-                cboAudioSampleRate.SelectedItem = audio.SampleRateDefault;
+                {
+                    if (item == 0)
+                        hz.Add(0, "Auto");
+                    else
+                        hz.Add(item, $"{item} Hz");
+                }
+                cboAudioSampleRate.DisplayMember = "Value";
+                cboAudioSampleRate.ValueMember = "Key";
+                cboAudioSampleRate.DataSource = new BindingSource(hz, null);
+
+                cboAudioSampleRate.SelectedValue = audio.SampleRateDefault;
 
                 // Channel
                 cboAudioChannel.DataSource = null;
@@ -1451,6 +1469,8 @@ namespace IFME
                         }
                     }
                 }
+
+                DisplayProperties_Audio();
             }
         }
 
@@ -1476,6 +1496,9 @@ namespace IFME
                     foreach (ListViewItem item in lstAudio.SelectedItems)
                     {
                         (lstFile.SelectedItems[0].Tag as MediaQueue).Audio[item.Index].Encoder.Mode = cboAudioMode.SelectedIndex;
+                        (lstFile.SelectedItems[0].Tag as MediaQueue).Audio[item.Index].Encoder.Quality = cboAudioQuality.Text;
+                        (lstFile.SelectedItems[0].Tag as MediaQueue).Audio[item.Index].Encoder.SampleRate = (int)cboAudioSampleRate.SelectedValue;
+                        (lstFile.SelectedItems[0].Tag as MediaQueue).Audio[item.Index].Encoder.Channel = (int)cboAudioChannel.SelectedValue;
                     }
                 }
                 else if (lstFile.SelectedItems.Count > 1)
@@ -1485,23 +1508,26 @@ namespace IFME
                         foreach (var item in (queue.Tag as MediaQueue).Audio)
                         {
                             item.Encoder.Mode = cboAudioMode.SelectedIndex;
+                            item.Encoder.Quality = cboAudioQuality.Text;
+                            item.Encoder.SampleRate = (int)cboAudioSampleRate.SelectedValue;
+                            item.Encoder.Channel = (int)cboAudioChannel.SelectedValue;
                         }
                     }
                 }
+
+                DisplayProperties_Audio();
             }
         }
 
         private void cboAudioQuality_SelectedIndexChanged(object sender, EventArgs e)
         {
-            decimal.TryParse(cboAudioQuality.Text, out decimal q);
-
             if ((sender as Control).Focused)
             {
                 if (lstFile.SelectedItems.Count == 1)
                 {
                     foreach (ListViewItem item in lstAudio.SelectedItems)
                     {
-                        (lstFile.SelectedItems[0].Tag as MediaQueue).Audio[item.Index].Encoder.Quality = q;
+                        (lstFile.SelectedItems[0].Tag as MediaQueue).Audio[item.Index].Encoder.Quality = cboAudioQuality.Text;
                     }
                 }
                 else if (lstFile.SelectedItems.Count > 1)
@@ -1510,24 +1536,24 @@ namespace IFME
                     {
                         foreach (var item in (queue.Tag as MediaQueue).Audio)
                         {
-                            item.Encoder.Quality = q;
+                            item.Encoder.Quality = cboAudioQuality.Text;
                         }
                     }
                 }
+
+                DisplayProperties_Audio();
             }
         }
 
         private void cboAudioSampleRate_SelectedIndexChanged(object sender, EventArgs e)
         {
-            int.TryParse(cboAudioSampleRate.Text, out int hz);
-
             if ((sender as Control).Focused)
             {
                 if (lstFile.SelectedItems.Count == 1)
                 {
                     foreach (ListViewItem item in lstAudio.SelectedItems)
                     {
-                        (lstFile.SelectedItems[0].Tag as MediaQueue).Audio[item.Index].Encoder.SampleRate = hz;
+                        (lstFile.SelectedItems[0].Tag as MediaQueue).Audio[item.Index].Encoder.SampleRate = (int)cboAudioSampleRate.SelectedValue;
                     }
                 }
                 else if (lstFile.SelectedItems.Count > 1)
@@ -1536,7 +1562,7 @@ namespace IFME
                     {
                         foreach (var item in (queue.Tag as MediaQueue).Audio)
                         {
-                            item.Encoder.SampleRate = hz;
+                            item.Encoder.SampleRate = (int)cboAudioSampleRate.SelectedValue;
                         }
                     }
                 }
@@ -2049,6 +2075,8 @@ namespace IFME
             EnableTab(tabConfigSubtitle, btnStart.Enabled);
             EnableTab(tabConfigAttachment, btnStart.Enabled);
             EnableTab(tabConfigAdvance, btnStart.Enabled);
+
+            tabConfigAttachment.Enabled = (MediaContainer)cboFormat.SelectedIndex == MediaContainer.MKV;
         }
 
         private void cboProfile_SelectedIndexChanged(object sender, EventArgs e)

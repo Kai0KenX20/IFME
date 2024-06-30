@@ -65,7 +65,7 @@
             this.lblVersion.ForeColor = System.Drawing.Color.White;
             this.lblVersion.Location = new System.Drawing.Point(16, 171);
             this.lblVersion.Name = "lblVersion";
-            this.lblVersion.Size = new System.Drawing.Size(400, 46);
+            this.lblVersion.Size = new System.Drawing.Size(600, 46);
             this.lblVersion.TabIndex = 0;
             this.lblVersion.Text = "Version";
             this.lblVersion.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -101,7 +101,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.BackColor = System.Drawing.Color.Black;
-            this.BackgroundImage = global::IFME.Properties.Resources.SplashScreen11;
+            this.BackgroundImage = global::IFME.Properties.Resources.SplashScreen12;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(1066, 600);
             this.Controls.Add(this.lblLog);
