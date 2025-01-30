@@ -1,0 +1,60 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - master
+  release:
+    types:
+      - published
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x' # Adjust based on your project requirements
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Restore Dependencies
+        run: dotnet restore
+
+      - name: Build Solution
+        run: msbuild IFME.sln /p:Configuration=Release
+
+      - name: Package Build
+        run: |
+          mkdir artifact
+          cp -r IFME/bin/Release/* artifact/
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ifme-build
+          path: artifact/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ifme-build
+          path: artifact/
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifact/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
