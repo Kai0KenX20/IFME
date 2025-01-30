@@ -45,16 +45,29 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Download Build Artifact
         uses: actions/download-artifact@v3
         with:
           name: ifme-build
           path: artifact/
 
+      - name: Auto Create Tag
+        id: tag
+        run: |
+          VERSION=$(date +'%Y.%m.%d-%H%M') # Generates timestamp-based version
+          git tag $VERSION
+          git push origin $VERSION
+          echo "TAG_NAME=$VERSION" >> $GITHUB_ENV
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TAG_NAME }}
           files: artifact/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
