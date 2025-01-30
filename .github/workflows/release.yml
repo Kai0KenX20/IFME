@@ -31,16 +31,19 @@ jobs:
       - name: Build Solution
         run: msbuild IFME.sln /p:Configuration=Release
 
-      - name: Package Build
+      - name: Package Build into ZIP
         run: |
           mkdir artifact
           cp -r IFME/bin/Release/* artifact/
+          cd artifact
+          7z a ../ifme-build.zip *
+          cd ..
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
           name: ifme-build
-          path: artifact/
+          path: ifme-build.zip
 
   release:
     needs: build
@@ -54,20 +57,19 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ifme-build
-          path: artifact/
+          path: .
 
-      - name: Auto Create Tag
-        id: tag
+      - name: Create Git Tag (if none exists)
         run: |
-          VERSION=$(date +'%Y.%m.%d-%H%M') # Generates timestamp-based version
-          git tag $VERSION
-          git push origin $VERSION
-          echo "TAG_NAME=$VERSION" >> $GITHUB_ENV
+          TAG_NAME=$(date +v%Y.%m.%d)
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG_NAME }}
-          files: artifact/*
+          files: ifme-build.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
